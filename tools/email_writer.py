@@ -1,5 +1,6 @@
 from tools.common import Tool
 from utils.llm import get_response_content_from_gpt
+from utils.logger import Logger
 
 separator = "\n`````\n"
 
@@ -10,7 +11,9 @@ class EmailWriter(Tool):
 
     file_name = "./email.txt"
 
-    def run(self, args: dict) -> str:
+    def run(self, recipient: str, subject: str, requirements: str, other_information: str = None) -> str:
+        Logger.info(f"tool:{self.name} recipient: {recipient}, subject: {subject}, requirements: {requirements}, other_information: {other_information}")
+
         system_message = {"role": "system", "content": """You are a email writer. You always follow belows principles in writing
         a email:
         Before drafting your email, consider the following:
@@ -25,15 +28,10 @@ class EmailWriter(Tool):
         Body of Email: State your purpose for writing. Be clear, concise, and respectful.
         Closing: Express your appreciation for their time and request any necessary follow-up action. Sign off politely."""}
 
-        recipient_arg = args.get("recipient")
-        subject_arg = args.get("subject")
-        requirements_arg = args.get("requirements")
-        other_information_arg = args.get("other_information")
-
-        recipient = f"Recipient: {recipient_arg}\n"
-        subject = f"Subject: {subject_arg}\n"
-        requirements = f"Email Requirements: {requirements_arg}\n"
-        other_information = f"Other Information: {other_information_arg}\n" if other_information_arg else ""
+        recipient = f"Recipient: {recipient}\n"
+        subject = f"Subject: {subject}\n"
+        requirements = f"Email Requirements: {requirements}\n"
+        other_information = f"Other Information: {other_information}\n" if other_information else ""
 
         user_message = {"role": "user", "content": f"""Please help me to write a email.
          {recipient}{subject}{requirements}{other_information}"""}
@@ -71,7 +69,6 @@ class EmailWriter(Tool):
                         "other_information": {
                             "type": "string",
                             "description": "The others of the email.",
-                            "default": ""
                         },
                     },
                     "required": ["recipient", "subject", "requirements"]

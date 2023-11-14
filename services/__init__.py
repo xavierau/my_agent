@@ -2,7 +2,7 @@ from services.common import Message, Memory, SystemPromptBuilder
 from services.core import get_llm_response, add_user_message, get_function_response, add_assistant_message
 
 
-def ask(message: str, memory: Memory, image_url=None):
+def ask(message: str, memory: Memory, image_url=None)->Message:
     add_user_message(image_url, memory, message)
 
     response_message = get_llm_response(memory=memory)
@@ -16,4 +16,4 @@ def ask(message: str, memory: Memory, image_url=None):
 
     add_assistant_message(memory, reply_message)
 
-    return reply_message
+    return memory.get_latest_message()

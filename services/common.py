@@ -1,5 +1,6 @@
 import json
 import os
+import uuid
 from datetime import datetime
 import enum
 from typing import Optional, Any, List
@@ -21,7 +22,7 @@ dotenv.load_dotenv()
 
 
 class Message(BaseModel):
-    id: Optional[str]
+    id: Optional[str] = Field(default_factory=lambda: uuid.uuid4().hex)
     role: str
     content: Optional[str] | Optional[List[Any]]
     tool_call_id: Optional[str]
@@ -29,15 +30,15 @@ class Message(BaseModel):
     function: Optional[Any]
     name: Optional[str]
     function_response: Optional[Any]
-    created_at: datetime = Field(
-        default_factory=lambda: datetime.now(pytz.timezone(os.getenv('TIMEZONE', "UTC"))).isoformat())
 
     def to_json(self):
         obj_dict = Message(role="user").__dict__
         keys = list(obj_dict.keys())
         temp = {}
         for key in keys:
-            if self.__dict__.get(key) is not None:
+            if key == "created_at":
+                temp[key] = self.created_at
+            elif self.__dict__.get(key) is not None:
                 temp[key] = self.__dict__.get(key)
 
         return temp
@@ -46,6 +47,9 @@ class Message(BaseModel):
 class History(BaseModel):
 
     def get_messages(self) -> List[Message]:
+        raise NotImplementedError
+
+    def get_latest_messages(self) -> Message:
         raise NotImplementedError
 
     def add_message(self, message: Message):
@@ -58,10 +62,15 @@ class History(BaseModel):
         messages = self.get_messages()
         messages = messages[-limit:]
 
+        exclude_keys = [
+            "created_at",
+            "id"
+        ]
+
         for m in messages:
             temp = {}
             for key in keys:
-                if m.__dict__.get(key) is not None:
+                if key not in exclude_keys and m.__dict__.get(key) is not None:
                     temp[key] = m.__dict__.get(key)
             temp_list.append(temp)
 
@@ -70,6 +79,8 @@ class History(BaseModel):
 
 class FileBaseHistory(History):
     file_path: str
+    def get_latest_messages(self)->Message:
+        return self.get_messages()[-1]
 
     def get_messages(self) -> List[Message]:
         with open(self.file_path, 'r') as fp:
@@ -91,6 +102,9 @@ class FileBaseHistory(History):
 class SimpleHistory(History):
     messages = []
 
+    def get_latest_messages(self) -> Message:
+        return self.messages[-1]
+
     def get_messages(self) -> List[Message]:
         return self.messages
 
@@ -101,6 +115,9 @@ class SimpleHistory(History):
 
 class Memory(BaseModel):
     history: History = Field(default_factory=SimpleHistory)
+
+    def get_latest_message(self) -> Message:
+        return self.history.get_latest_messages()
 
     def add(self, message: Message):
         self.history.add_message(message)

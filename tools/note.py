@@ -1,4 +1,5 @@
 from tools.common import Tool
+from utils.logger import Logger
 
 separator = "\n`````\n"
 
@@ -9,10 +10,9 @@ class WriteToMyNoteTool(Tool):
 
     file_name = "./my_note.txt"
 
-    def run(self, args: dict) -> str:
-        print('args: ', args)
+    def run(self, content: str) -> str:
+        Logger.info(f"tool:{self.name}")
 
-        content = args.get("content")
         file = open(self.file_name, "a")  # append mode
         file.write(content + separator)
         file.close()
@@ -46,8 +46,9 @@ class ReadFromMyNoteTool(Tool):
 
     file_name = "./my_note.txt"
 
-    def run(self, args: dict) -> str:
-        content = args.get("content")
+    def run(self, content: str) -> str:
+        Logger.info(f"tool:{self.name}")
+
         file = open(self.file_name, "r")  # append mode
         return file.read()
 

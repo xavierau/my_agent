@@ -11,6 +11,7 @@ from openai import OpenAI
 import dotenv
 
 from utils.llm import get_response_content_from_gpt
+from utils.logger import Logger
 
 dotenv.load_dotenv()
 
@@ -42,7 +43,6 @@ class GoogleSearchTool(Tool):
                             "description": "Number of top result return. It must between 1 and 10. Without special reason, always set it to 3.",
                             "default": 3
                         }
-
                     },
                     "required": ["query", "limit"]
                 }
@@ -52,9 +52,9 @@ class GoogleSearchTool(Tool):
     key: str
     search_engine_id: str
 
-    def run(self, args: dict) -> str:
-        query = args.get('query', None)
-        limit = args.get('limit', 10)
+    def run(self, query: str, limit=5) -> str:
+
+        Logger.info(f"tool:{self.name} query: {query}, limit: {limit}")
 
         print('search query: ', query)
 
@@ -87,30 +87,36 @@ class GoogleSearchTool(Tool):
         }
 
     def _summary_site(self, question: str, url: str) -> str | None:
-        # Send a GET request to the URL
-        response = requests.get(url)
 
-        # Check if the request was successful
-        if response.status_code == 200:
-            # Parse the content of the request with BeautifulSoup
-            soup = BeautifulSoup(response.content, 'html.parser')
+        try:
+            # Send a GET request to the URL
+            response = requests.get(url)
 
-            # Extract data
-            # For example, this will print all the text in the body of the HTML
-            content = soup.get_text()
+            # Check if the request was successful
+            if response.status_code == 200:
+                # Parse the content of the request with BeautifulSoup
+                soup = BeautifulSoup(response.content, 'html.parser')
 
-            context = content
+                # Extract data
+                # For example, this will print all the text in the body of the HTML
+                content = soup.get_text()
 
-            encoder = tiktoken.encoding_for_model("gpt-3.5-turbo")
-            number_of_tokens = len(encoder.encode(context))
+                context = content
 
-            if number_of_tokens < 2048:
-                return self._simple_summarize(query=question, text=context)
+                encoder = tiktoken.encoding_for_model("gpt-3.5-turbo")
+                number_of_tokens = len(encoder.encode(context))
+
+                if number_of_tokens < 2048:
+                    return self._simple_summarize(query=question, text=context)
+                else:
+                    return self._reduce_summarize(query=question, text=context)
+
             else:
-                return self._reduce_summarize(query=question, text=context)
+                print("Failed to retrieve the webpage")
+                return None
 
-        else:
-            print("Failed to retrieve the webpage")
+        except:
+            print("Something wrong about fetching the url")
             return None
 
     def _simple_summarize(self, query: str, text: str) -> str:

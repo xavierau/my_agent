@@ -11,7 +11,8 @@ from tools.common import Tool
 from tools.email_writer import EmailWriter
 from tools.google_search import GoogleSearchTool
 from tools.note import WriteToMyNoteTool, ReadFromMyNoteTool
-from utils.llm import get_response_message_from_gpt
+from tools.tweet_writer import TweetWriter
+from utils.llm import get_response_message_from_gpt, get_response_content_from_gpt
 
 my_tools: List[Tool] = [
     GoogleSearchTool(
@@ -21,6 +22,7 @@ my_tools: List[Tool] = [
     WriteToMyNoteTool(),
     ReadFromMyNoteTool(),
     EmailWriter(),
+    TweetWriter()
 ]
 
 
@@ -88,7 +90,7 @@ def get_overall_messages(memory: Memory):
     return messages
 
 
-def get_llm_response(memory: Memory ):
+def get_llm_response(memory: Memory):
     config = {}
 
     tools = get_available_tools()
@@ -115,7 +117,7 @@ def get_function_response(memory, tool_calls):
         function_to_call = available_functions[function_name]
         function_args = json.loads(tool_call.function.arguments)
 
-        function_response = function_to_call(function_args)
+        function_response = function_to_call(**function_args)
 
         memory.add(Message(
             tool_call_id=tool_call.id,
@@ -123,12 +125,8 @@ def get_function_response(memory, tool_calls):
             name=function_name,
             content=function_response
         ))
-    reply_response = get_client().chat.completions.create(
-        model="gpt-3.5-turbo-1106",
-        messages=memory.to_list(),
-    )
-    reply_message = reply_response.choices[0].message.content
-    return reply_message
+
+    return get_response_content_from_gpt(messages=memory.to_list())
 
 
 def add_user_message(image_url, memory, message):
@@ -147,8 +145,8 @@ def add_assistant_message(memory, reply_message):
     memory.add(Message(role='assistant', content=reply_message))
 
 
-def get_audio(message):
-    speech_file_path = "./speech.mp3"
+def get_audio(id: str, message: str):
+    speech_file_path = f"./audio_files/{id}.mp3"
     get_client().audio.speech.create(
         model="tts-1",
         voice="alloy",
@@ -156,3 +154,11 @@ def get_audio(message):
     ).stream_to_file(speech_file_path)
 
     return speech_file_path
+
+
+def get_transcript(audio_file_path):
+    transcript = get_client().audio.transcriptions.create(
+        model="whisper-1",
+        file=open(audio_file_path, "rb")
+    )
+    return transcript.text

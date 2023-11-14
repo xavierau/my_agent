@@ -9,7 +9,7 @@ class Tool(BaseModel, ABC):
     description: str
 
     @abstractmethod
-    def run(self, args: dict) -> str:
+    def run(self, **args) -> str:
         raise NotImplementedError
 
     @property
