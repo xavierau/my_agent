@@ -1,0 +1,9 @@
+.idea
+temp_upload_files/*
+audio_files/*
+logs/*
+*.ipynb
+*.zip
+coding/*
+output/*
+.cache

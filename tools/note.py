@@ -1,22 +1,24 @@
-from tools.common import Tool
+import asyncio
+
+from tools.common import Tool, ToolCallResult
 from utils.logger import Logger
 
 separator = "\n`````\n"
 
 
 class WriteToMyNoteTool(Tool):
-    name = "write_to_my_note"
-    description = "This is very helpful if you need to write down something into the notebook"
+    name: str = "write_to_my_note"
+    description: str = "This is very helpful if you need to write down something into the notebook"
 
-    file_name = "./my_note.txt"
+    file_name: str = "./my_note.txt"
 
-    def run(self, content: str) -> str:
+    async def run(self, content: str) -> ToolCallResult:
         Logger.info(f"tool:{self.name}")
 
         file = open(self.file_name, "a")  # append mode
         file.write(content + separator)
         file.close()
-        return "Successfully written to notebook."
+        return ToolCallResult(result="Successfully written to notebook.")
 
     @property
     def schema(self) -> dict:
@@ -41,16 +43,16 @@ class WriteToMyNoteTool(Tool):
 
 
 class ReadFromMyNoteTool(Tool):
-    name = "read_from_my_note"
-    description = "This is very helpful if you need to read something from the notebook"
+    name: str = "read_from_my_note"
+    description: str = "This is very helpful if you need to read something from the notebook"
 
-    file_name = "./my_note.txt"
+    file_name: str = "./my_note.txt"
 
-    def run(self, content: str) -> str:
+    async def run(self, content: str) -> ToolCallResult:
         Logger.info(f"tool:{self.name}")
-
-        file = open(self.file_name, "r")  # append mode
-        return file.read()
+        print('here')
+        with open(self.file_name, "r") as f:  # append mode
+            return asyncio.Future().set_result(ToolCallResult(result=f.read()))
 
     @property
     def schema(self) -> dict:

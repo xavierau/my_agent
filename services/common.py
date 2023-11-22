@@ -1,5 +1,6 @@
 import json
 import os
+import json
 import uuid
 from datetime import datetime
 import enum
@@ -11,8 +12,11 @@ from playsound import playsound
 from pydantic import BaseModel, Field
 
 import dotenv
+from sqlalchemy.orm import Session
+from database.schemas import Message as DBMessage, MessageCreate
 
 import config
+from database.utils import get_messages_by_session_id, create_message
 from tools.common import Tool
 from tools.email_writer import EmailWriter
 from tools.google_search import GoogleSearchTool
@@ -24,12 +28,13 @@ dotenv.load_dotenv()
 class Message(BaseModel):
     id: Optional[str] = Field(default_factory=lambda: uuid.uuid4().hex)
     role: str
-    content: Optional[str] | Optional[List[Any]]
-    tool_call_id: Optional[str]
-    tool_calls: Optional[List[Any]]
-    function: Optional[Any]
-    name: Optional[str]
-    function_response: Optional[Any]
+    content: Optional[str] | Optional[List[Any]] = None
+    tool_call_id: Optional[str] = None
+    tool_calls: Optional[List[Any]] = None
+    function: Optional[Any] = None
+    name: Optional[str] = None
+    function_response: Optional[Any] = None
+    frontend_render: Optional[Any] = None
 
     def to_json(self):
         obj_dict = Message(role="user").__dict__
@@ -56,7 +61,7 @@ class History(BaseModel):
         raise NotImplementedError
 
     def to_openai_list(self, limit=20) -> List[Any]:
-        temp_list = []
+        temp_list: List[dict] = []
         obj_dict = Message(role="user").__dict__
         keys = list(obj_dict.keys())
         messages = self.get_messages()
@@ -70,16 +75,65 @@ class History(BaseModel):
         for m in messages:
             temp = {}
             for key in keys:
-                if key not in exclude_keys and m.__dict__.get(key) is not None:
+                val = m.__dict__.get(key)
+                if key not in exclude_keys and val is not None and val != "":
                     temp[key] = m.__dict__.get(key)
             temp_list.append(temp)
 
-        return temp_list
+        sanitized_temp_list = self._sanitize_list(temp_list)
+
+        return sanitized_temp_list
+
+    def _sanitize_list(self, temp_list):
+        first_item = temp_list[0]
+        if first_item.get("role") == "tool":
+            temp_list = temp_list[1:]
+            return self._sanitize_list(temp_list)
+        else:
+            return temp_list
+
+
+class PostgresHistory(History):
+    session: Session
+    session_id: uuid.UUID
+
+    class Config:
+        arbitrary_types_allowed = True
+
+    def get_latest_messages(self) -> Message:
+        messages: List[DBMessage] = get_messages_by_session_id(db=self.session,
+                                                               session_id=self.session_id,
+                                                               limit=1)
+        return Message(**messages[0].message)
+
+    def get_messages(self, **kwargs) -> List[Message]:
+        messages: List[DBMessage] = get_messages_by_session_id(db=self.session,
+                                                               session_id=self.session_id,
+                                                               skip=kwargs.get("skip", 0),
+                                                               limit=kwargs.get("limit", 20))
+
+        messages.reverse()
+
+        return [Message(**(m.message)) for m in messages]
+
+    def add_message(self, message: Message):
+        print('add message', message)
+
+        data = {
+            "message": dict(message),
+            "role": message.role,
+            "session_id": self.session_id,
+        }
+
+        message_create = MessageCreate(**data)
+
+        create_message(db=self.session, message=message_create)
 
 
 class FileBaseHistory(History):
     file_path: str
-    def get_latest_messages(self)->Message:
+
+    def get_latest_messages(self) -> Message:
         return self.get_messages()[-1]
 
     def get_messages(self) -> List[Message]:
@@ -100,7 +154,7 @@ class FileBaseHistory(History):
 
 
 class SimpleHistory(History):
-    messages = []
+    messages: List[Message] = []
 
     def get_latest_messages(self) -> Message:
         return self.messages[-1]

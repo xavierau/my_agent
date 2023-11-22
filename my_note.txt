@@ -158,3 +158,30 @@ Creating a Personalized Plan Generation Agent:
 
 5. User Interaction: Create a user-friendly interface that presents the personalized vacation plans to the user, allowing for feedback, customization, and the ability to refine the recommendations based on user preferences.
 `````
+MBC 뉴스 이두요입니다.
+`````
+Check upcoming events and activities in Hong Kong for the week.
+`````
+MBC 뉴스 이두요 이더현의입니다.
+`````
+Once upon a time...
+There was a young girl named Katie. Katie loved to gaze at the twinkling stars in the night sky and dream about traveling to faraway galaxies. One magical evening, while she was stargazing in her backyard, a shooting star flew across the sky, and to her amazement, it landed in her yard, leaving behind a sparkling trail that led into the woods. Filled with curiosity and excitement, Katie followed the trail and discovered a hidden spaceship nestled between the trees. Inside the spaceship, she met a friendly alien named Cosmo, who had crash-landed on Earth. Cosmo was on a mission to collect stardust to power his ship, so he could return home to his family on a distant planet. 
+
+Together, Katie and Cosmo embarked on an extraordinary adventure across the cosmos, visiting dazzling planets and encountering strange and wondrous creatures. Along the way, they learned valuable lessons about the boundless love of God, the importance of family, and the joy of friendship. Through their shared experiences and challenges, they formed an unbreakable bond, and Katie even introduced Cosmo to the concept of family love, teaching him about the warmth and support of those we hold dear. As they journeyed through the stars, they discovered that friendship knows no bounds, and that even across galaxies, the love of God and the love of family and friends connects us all.
+
+After a series of thrilling escapades and heartwarming encounters, Katie and Cosmo succeeded in collecting stardust and fixing the spaceship. They bid farewell to the extraordinary worlds they had visited and returned to Earth, where Katie's family had been worried about her. To their surprise, they met her new extraterrestrial friend Cosmo, who came to express his gratitude for her kindness. With new friendships and unforgettable memories in their hearts, Katie and Cosmo promised to stay in touch through intergalactic mail, knowing that their cosmic connection was a testament to the power of love and friendship across the universe. From that day forward, Katie's love for space and its wonders was more than just a dream - it was a reminder of the love and joy that can be found among the stars and, especially, right here on Earth.
+`````
+Xavier Au checked in at YOOV Internet Technology (HK) Limited, at 11:00 AM on 17th June 2023.
+`````
+Xavier Au requested assistance in naming three characters but then realized he no longer needed to create pictures. Check in with Xavier later to see if he needs further assistance with creative tasks.
+`````
+List of Open Source PDDL Solver Libraries:
+1. Fast Downward - A highly flexible domain-independent planning system handling PDDL 2.2.
+2. FDSS - A sequential satisficing solver using the Fast Downward codebase.
+3. VAL - A plan validation tool that also provides animation and debugging functions for PDDL domains.
+4. Pyperplan - A small, educational Python planner for domain-independent planning basics.
+5. Planning.Domains - Offers planning as a service and access to planners via an API.
+6. Metric-FF - An extension of the FF planner dealing with numeric information in PDDL.
+7. LAPKT - The Lightweight Automated Planning Toolkit for executing different planning techniques.
+8. PDDL4J - A Java library for parsing and validating PDDL files, assists in building planners in Java.
+`````
