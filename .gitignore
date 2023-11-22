@@ -2,8 +2,9 @@
 temp_upload_files/*
 audio_files/*
 logs/*
-*.ipynb
+**/*.ipynb
 *.zip
 coding/*
 output/*
 .cache
+*.mp3
