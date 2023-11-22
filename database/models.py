@@ -44,10 +44,10 @@ class User(Base):
     __tablename__ = "users"
 
     id = Column(UUID(as_uuid=True), primary_key=True, index=True, default=uuid.uuid4)
-    name = Column(String)
-    phone = Column(String, nullable=True)
-    email = Column(String, unique=True, index=True)
-    hashed_password = Column(String)
+    name = Column(String(255))
+    phone = Column(String(255), nullable=True)
+    email = Column(String(255), unique=True, index=True)
+    hashed_password = Column(String(255))
     is_active = Column(Boolean, default=True)
 
     sessions = relationship("Session", back_populates="user")
@@ -62,7 +62,7 @@ class Message(Base):
     __tablename__ = "messages"
 
     id = Column(UUID(as_uuid=True), primary_key=True, index=True, default=uuid.uuid4)
-    role = Column(String, nullable=False)
+    role = Column(String(255), nullable=False)
     message = Column(JSON, nullable=True)
     session_id = Column(UUID, ForeignKey("sessions.id"), index=True, nullable=False)
     session = relationship("Session", back_populates="messages")
@@ -83,8 +83,8 @@ class Entity(Base):
     __tablename__ = "entities"
 
     id = Column(UUID(as_uuid=True), primary_key=True, index=True, default=uuid.uuid4)
-    key = Column(String)
-    content = Column(String)
+    key = Column(String(255))
+    content = Column(String(255))
 
     session_id = Column(UUID, ForeignKey("sessions.id"), index=True, nullable=False)
     session = relationship("Session", back_populates="entities")
@@ -98,9 +98,9 @@ class Agent(Base):
     __tablename__ = "agents"
 
     id = Column(UUID(as_uuid=True), primary_key=True, index=True, default=uuid.uuid4)
-    name = Column(String)
+    name = Column(String(255))
     configuration = Column(AgentConfigurationType())
-    type = Column(String)
+    type = Column(String(255))
 
     user_id = Column(UUID, ForeignKey("users.id"))
     user = relationship("User", back_populates="agents")
@@ -134,8 +134,8 @@ class Session(Base):
 class Note(Base):
     __tablename__ = "notes"
     id = Column(UUID(as_uuid=True), primary_key=True, index=True, default=uuid.uuid4)
-    name = Column(String)
-    content = Column(String)
+    name = Column(String(255))
+    content = Column(TEXT)
     session_id = Column(UUID, nullable=True)
 
     user_id = Column(UUID, ForeignKey("users.id"))
