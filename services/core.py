@@ -1,13 +1,10 @@
 import json
 import os
-import shutil
 from datetime import datetime
 from pathlib import Path
-from tkinter import Image
 from typing import List
 
 import pytz
-from fastapi import UploadFile
 from openai import OpenAI
 
 from services import Memory, Message, SystemPromptBuilder
