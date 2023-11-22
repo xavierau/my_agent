@@ -1,13 +1,11 @@
-import asyncio
-import logging
 import os
 import shutil
 import uuid
-from asyncio import sleep
 from datetime import datetime
 from pathlib import Path
 from typing import Annotated, Optional
 
+import dotenv
 from fastapi import FastAPI, UploadFile, Request, Form, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
@@ -22,6 +20,8 @@ import logging
 from utils.helpers import resize_image_file
 from utils.s3 import upload_to_s3
 from fastapi.middleware.gzip import GZipMiddleware
+
+dotenv.load_dotenv()
 
 now = datetime.today().date()
 
@@ -68,6 +68,8 @@ async def secret_key_middleware(request: Request, call_next):
             content={"msg": "Invalid Secret Key"},
         )
 
+    print("pass secret key middleware")
+    
     return await call_next(request)
 
 
