@@ -21,7 +21,7 @@ class WriteToMyNoteTool(Tool):
                                  content=content,
                                  session_id="6bd2db49-3c75-4a5c-abef-b9eac5a7dfe9", )
 
-        await create_note(note_create)
+        create_note(note_create)
 
         file = open(self.file_name, "a")  # append mode
         file.write(content + separator)

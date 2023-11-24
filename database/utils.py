@@ -1,7 +1,7 @@
 import uuid
 from typing import Optional, List
 
-from sqlalchemy import desc, text
+from sqlalchemy import desc, text, or_, and_
 from sqlalchemy.orm import Session
 from database import models, schemas
 
@@ -63,6 +63,18 @@ def get_sessions_by_user_agent_id(db: Session, user_id: uuid.UUID, agent_id: uui
 def get_messages_by_session_id(db: Session, session_id: uuid.UUID, skip: int = 0, limit: int = 100):
     return db.query(models.Message) \
         .filter(models.Message.session_id == session_id) \
+        .order_by(desc(text("created_at"))) \
+        .offset(skip) \
+        .limit(limit) \
+        .all()
+
+
+def get_messages_for_frontend_by_session_id(db: Session, session_id: uuid.UUID, skip: int = 0, limit: int = 100):
+    return db.query(models.Message) \
+        .filter(
+        models.Message.session_id == session_id,
+        or_(models.Message.role == 'assistant', models.Message.role == 'user')
+    ) \
         .order_by(desc(text("created_at"))) \
         .offset(skip) \
         .limit(limit) \

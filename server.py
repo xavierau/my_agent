@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 from starlette.responses import FileResponse, JSONResponse
 
 from database.connection import create_tables, get_db
+from database.utils import get_messages_by_session_id, get_messages_for_frontend_by_session_id
 from services.common import Memory, FileBaseHistory, PostgresHistory
 from services.core import get_audio, get_transcript, ask
 from fastapi.middleware.cors import CORSMiddleware
@@ -53,7 +54,7 @@ app.add_middleware(
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 
-# @app.middleware("secret_key")
+@app.middleware("secret_key")
 async def secret_key_middleware(request: Request, call_next):
     print("in secret key middleware")
     set_secret_key = os.getenv('SECRET_KEY', None)
@@ -77,6 +78,12 @@ class SendToGptRequest(BaseModel):
     content: str
     file: Optional[UploadFile] = None
     require_audio: bool = False
+
+
+class GetMessagesRequest(BaseModel):
+    session_id: str | None = None
+    page: int = 1
+    limit: int = 25
 
 
 class SendToGptWithAudioRequest(BaseModel):
@@ -122,6 +129,17 @@ async def send_to_gpt(req: SendToGptRequest, db: Annotated[Session, Depends(get_
     #     'message': "tresting",
     #     'audio': req.require_audio
     # }
+
+
+@app.get('/messages')
+async def get_session_messages(req: Request, db: Annotated[Session, Depends(get_db)]):
+    session_id: uuid.UUID = "6bd2db49-3c75-4a5c-abef-b9eac5a7dfe9"
+    messages = get_messages_for_frontend_by_session_id(db, session_id)
+
+    def check_not_tools(message):
+        return True if message.role == "user" else message.message.get("tool_calls", None) is None
+
+    return [m for m in messages if check_not_tools(m)]
 
 
 @app.post('/call_with_audio')
