@@ -53,7 +53,7 @@ app.add_middleware(
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 
-@app.middleware("secret_key")
+# @app.middleware("secret_key")
 async def secret_key_middleware(request: Request, call_next):
     print("in secret key middleware")
     set_secret_key = os.getenv('SECRET_KEY', None)
@@ -69,7 +69,7 @@ async def secret_key_middleware(request: Request, call_next):
         )
 
     print("pass secret key middleware")
-    
+
     return await call_next(request)
 
 

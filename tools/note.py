@@ -1,6 +1,8 @@
 import asyncio
 
 from tools.common import Tool, ToolCallResult
+from tools.notebook.database.schemas import NoteCreate
+from tools.notebook.database.utils import create_note
 from utils.logger import Logger
 
 separator = "\n`````\n"
@@ -15,9 +17,16 @@ class WriteToMyNoteTool(Tool):
     async def run(self, content: str) -> ToolCallResult:
         Logger.info(f"tool:{self.name}")
 
+        note_create = NoteCreate(name="my_note",
+                                 content=content,
+                                 session_id="6bd2db49-3c75-4a5c-abef-b9eac5a7dfe9", )
+
+        await create_note(note_create)
+
         file = open(self.file_name, "a")  # append mode
         file.write(content + separator)
         file.close()
+
         return ToolCallResult(result="Successfully written to notebook.")
 
     @property

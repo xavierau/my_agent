@@ -185,3 +185,5 @@ List of Open Source PDDL Solver Libraries:
 7. LAPKT - The Lightweight Automated Planning Toolkit for executing different planning techniques.
 8. PDDL4J - A Java library for parsing and validating PDDL files, assists in building planners in Java.
 `````
+Fine Tuning Mantis2 7b Tutorial - Create a comprehensive tutorial on how to fine-tune the Mantis2 7b model for specific use cases.
+`````
