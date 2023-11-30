@@ -5,6 +5,8 @@ from datetime import datetime
 import requests
 from requests_oauthlib import OAuth1Session
 
+from utils.retry import retry
+
 oauth: OAuth1Session = OAuth1Session(
     os.getenv("TWEETER_API_KEY"),
     client_secret=os.getenv("TWEETER_SECRET_KEY"),
@@ -45,6 +47,7 @@ class Twitter:
 
         return json_response
 
+    @retry(max_attempts=3, delay_seconds=2)
     async def upload_image(self, image_url):
 
         total_bytes = requests.head(image_url).headers['content-length']
