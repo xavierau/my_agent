@@ -13,5 +13,7 @@ output/*
 *.mp3
 __pycache__
 */__pycache__/
+**/*/__pycache__/
+utils/__pycache__
 __pypackages__/
 

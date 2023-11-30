@@ -5,15 +5,17 @@ from tools.common import Tool, ToolCallResult
 from utils.logger import Logger
 from openai import OpenAI
 
+from utils.s3 import upload_to_s3
+
 
 class DallE3(Tool):
     name: str = "dall_e_3"
-    description: str = "This is very helpful if you need to create a image"
+    description: str = "This is very helpful if you need to create a image or drawing."
 
     async def run(self,
-            requirement: str,
-            quality: Literal["standard", "hd"] = "standard",
-            number_of_image=1) -> ToolCallResult:
+                  requirement: str,
+                  quality: Literal["standard", "hd"] = "standard",
+                  number_of_image=1) -> ToolCallResult:
         Logger.info(f"tool:{self.name}")
 
         response = OpenAI().images.generate(
@@ -28,7 +30,9 @@ class DallE3(Tool):
 
         print("images: ", images)
 
-        return ToolCallResult(result=json.dumps({"status": "completed", "image_urls": [i.url for i in images]}))
+        image_urls = [upload_to_s3(file_name=i.url, bucket="xavier-personal-agent") for i in images]
+
+        return ToolCallResult(result=json.dumps({"status": "completed", "image_urls": image_urls}))
 
     @property
     def schema(self) -> dict:

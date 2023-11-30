@@ -117,8 +117,6 @@ class PostgresHistory(History):
         return [Message(**(m.message)) for m in messages]
 
     def add_message(self, message: Message):
-        print('add message', message)
-
         data = {
             "message": dict(message),
             "role": message.role,

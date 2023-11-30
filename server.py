@@ -1,12 +1,13 @@
 import os
 import shutil
+import time
 import uuid
 from datetime import datetime
 from pathlib import Path
 from typing import Annotated, Optional
 
 import dotenv
-from fastapi import FastAPI, UploadFile, Request, Form, Depends, HTTPException
+from fastapi import FastAPI, UploadFile, Request, Form, Depends, HTTPException, File
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from starlette.responses import FileResponse, JSONResponse
@@ -76,7 +77,6 @@ async def secret_key_middleware(request: Request, call_next):
 
 class SendToGptRequest(BaseModel):
     content: str
-    file: Optional[UploadFile] = None
     require_audio: bool = False
 
 
@@ -98,23 +98,10 @@ def welcome():
 
 @app.post('/call')
 async def send_to_gpt(req: SendToGptRequest, db: Annotated[Session, Depends(get_db)]):
-    image_url = None
-
-    if req.file is not None:
-        print('here')
-        content_type = req.file.content_type
-        if content_type not in ["image/jpeg", "image/png"]:
-            raise HTTPException(status_code=400, detail="Invalid file type")
-
-        temp_directory = "./temp_upload_files"
-        resize_image_file(file=req.file, store_file_dir_path=temp_directory)
-        file_path = Path(temp_directory + "/" + req.file.filename)
-        image_url = upload_to_s3(file_name=file_path, bucket="xavier-personal-agent")
-
     session_id: uuid.UUID = "6bd2db49-3c75-4a5c-abef-b9eac5a7dfe9"
     history = PostgresHistory(session=db, session_id=session_id)
     memory = Memory(history=history)
-    response_message = await ask(req.content, memory, image_url)
+    response_message = await ask(req.content, memory)
 
     if req.require_audio:
         get_audio(response_message.id, response_message.content)
@@ -129,6 +116,47 @@ async def send_to_gpt(req: SendToGptRequest, db: Annotated[Session, Depends(get_
     #     'message': "tresting",
     #     'audio': req.require_audio
     # }
+
+
+@app.post('/call_with_file')
+async def send_to_gpt_with_file(db: Annotated[Session, Depends(get_db)], content: Annotated[str, Form()],
+                                file: Annotated[UploadFile, File(description="This is a reference file")],
+                                require_audio=False):
+    if file is not None:
+        print('here', file)
+    content_type = file.content_type
+    if content_type not in ["image/jpeg", "image/png"]:
+        raise HTTPException(status_code=400, detail="Invalid file type")
+
+    temp_directory = "./temp_upload_files"
+    resize_image_file(file=file, store_file_dir_path=temp_directory)
+    file_path = Path(temp_directory + "/" + file.filename)
+
+    counter = 0
+
+    while file_path.is_file() is False:
+        if counter == 10:
+            raise HTTPException(status_code=400, detail="Invalid file")
+        time.sleep(1)
+        counter = counter + 1
+
+    image_url = upload_to_s3(file_name=str(file_path), bucket="xavier-personal-agent")
+
+    print("image_url", image_url)
+
+    session_id: uuid.UUID = "6bd2db49-3c75-4a5c-abef-b9eac5a7dfe9"
+    history = PostgresHistory(session=db, session_id=session_id)
+    memory = Memory(history=history)
+    response_message = await ask(content, memory, image_url)
+
+    if require_audio:
+        get_audio(response_message.id, response_message.content)
+
+    return {
+        'id': response_message.id,
+        'message': response_message.content,
+        'audio': require_audio
+    }
 
 
 @app.get('/messages')

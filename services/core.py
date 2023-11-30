@@ -15,6 +15,7 @@ from tools.email_writer import EmailWriter
 from tools.google_calender import GetGoogleCalendarTool, CreateGoogleCalendarTool, ModifyGoogleCalendarTool, \
     DeleteGoogleCalendarTool
 from tools.google_search import GoogleSearchTool
+from tools.gpt4v import GPT4V
 from tools.note import WriteToMyNoteTool, ReadFromMyNoteTool
 from tools.tweet_writer import SimpleTweetWriter
 from tools.yoov_work_checkin import YoovWorkCheckin
@@ -35,6 +36,7 @@ my_tools: List[Tool] = [
     ModifyGoogleCalendarTool(),
     DeleteGoogleCalendarTool(),
     DallE3(),
+    GPT4V(),
     CodeWriter()
 ]
 
@@ -47,7 +49,7 @@ def get_client():
     return OpenAI()
 
 
-async def get_response(memory, model_name="gpt-3.5-turbo-1106"):
+async def get_response(memory, model_name):
     try:
         response_message = await get_llm_response(memory=memory, model_name=model_name)
 
@@ -70,7 +72,8 @@ async def get_response(memory, model_name="gpt-3.5-turbo-1106"):
 def get_system_message(memory):
     agent_setting = """You are a helpful, cheerful personal assistant. Your name is John.
     Following is the user information that is very helpful for you to answer user's question.
-    Using this information, provide a personalized response that aligns with their behavioral preferences. 
+    Using this information, provide a personalized response that aligns with their behavioral preferences.
+    You are using the latest OpenAI GPT4-Vision as tool to help you answer image related questions. 
     Ensure your response is respectful, helpful, and tailored to the customer's individual needs. Try to list the source of the information if possible."""
 
     now = datetime.now(tz=pytz.timezone("Asia/Hong_Kong")).strftime("%d %B %Y %H:%M:%S, %A")
@@ -124,7 +127,7 @@ def get_overall_messages(memory: Memory):
 
 
 async def get_llm_response(memory: Memory, model_name="gpt-3.5-turbo-1106"):
-    config = {"model_name": model_name}
+    config = {}
 
     tools = get_available_tools()
 
@@ -132,7 +135,9 @@ async def get_llm_response(memory: Memory, model_name="gpt-3.5-turbo-1106"):
         config['tools'] = [t.schema for t in tools]
         config['tool_choice'] = "auto"
 
-    return await get_response_message_from_gpt(messages=get_overall_messages(memory), **config)
+    return await get_response_message_from_gpt(messages=get_overall_messages(memory),
+                                               model_name=model_name,
+                                               **config)
 
 
 async def get_function_response(memory, tool_calls):
@@ -166,7 +171,7 @@ async def get_function_response(memory, tool_calls):
 
         memory.add(function_call_reply_message)
 
-    return await get_response(memory)
+    return await get_response(memory, model_name="gpt-3.5-turbo-1106")
 
 
 def add_user_message(image_url, memory, message):
@@ -174,8 +179,10 @@ def add_user_message(image_url, memory, message):
                            content=[{"type": "text", "text": message}]) if image_url is None else Message(
         role='user',
         content=[
-            {"type": "text", "text": message},
-            {"type": "image_url", "image_url": {"url": image_url}}
+            {
+                "type": "text",
+                "text": f"{message}  \n\n`````\nimage_url: {image_url} \n`````"
+            },
         ]
     )
     memory.add(user_message)
@@ -212,6 +219,7 @@ async def ask(message: str, memory: Memory, image_url=None) -> Message:
     reply_message = await get_response(memory, model_name="gpt-4-1106-preview")
 
     print("reply_message", reply_message)
+
     add_assistant_message(memory, reply_message)
 
     return memory.get_latest_message()

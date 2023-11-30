@@ -2,7 +2,10 @@ import logging
 import os
 
 import boto3
+import requests
 from botocore.exceptions import ClientError
+
+from utils.helpers import is_local, get_random_string
 
 
 def create_bucket(bucket_name, region=None):
@@ -41,16 +44,38 @@ def upload_to_s3(file_name, bucket, object_name=None):
         :return: True if file was uploaded, else False
         """
 
-    # If S3 object_name was not specified, use file_name
-    if object_name is None:
-        object_name = os.path.basename(file_name)
+    if is_local(file_name):
 
-    # Upload the file
-    s3_client = boto3.client('s3')
-    try:
-        response = s3_client.upload_file(file_name, bucket, object_name, ExtraArgs={'ACL': 'public-read'})
-    except ClientError as e:
-        logging.error(e)
-        return False
+        # If S3 object_name was not specified, use file_name
+        if object_name is None:
+            object_name = os.path.basename(file_name)
+
+        # Upload the file
+        s3_client = boto3.client('s3')
+        try:
+            response = s3_client.upload_file(file_name, bucket, object_name, ExtraArgs={'ACL': 'public-read'})
+        except ClientError as e:
+            logging.error(e)
+            raise e
+
+    else:
+        r = requests.get(file_name, stream=True)
+
+        s3_client = boto3.client('s3')
+
+        print('response headers', r.headers)
+
+        if r.headers.get("content_type") == 'image/jpeg':
+            object_name = get_random_string(16) + '.jpg'
+        else:
+            object_name = get_random_string(16) + '.png'
+
+        print("object_name: ", object_name)
+
+        try:
+            response = s3_client.upload_fileobj(r.raw, bucket, object_name, ExtraArgs={'ACL': 'public-read'})
+        except ClientError as e:
+            logging.error(e)
+            raise e
 
     return f"https://{bucket}.s3.ap-east-1.amazonaws.com/{object_name}"
