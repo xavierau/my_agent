@@ -3,9 +3,14 @@ import os
 
 import boto3
 import requests
+from botocore.config import Config
 from botocore.exceptions import ClientError
 
 from utils.helpers import is_local, get_random_string
+
+aws_config = Config(
+    region_name='ap-east-1',
+)
 
 
 def create_bucket(bucket_name, region=None):
@@ -44,6 +49,8 @@ def upload_to_s3(file_name, bucket, object_name=None):
         :return: True if file was uploaded, else False
         """
 
+    s3_client = boto3.client('s3', config=aws_config)
+
     if is_local(file_name):
 
         # If S3 object_name was not specified, use file_name
@@ -51,7 +58,7 @@ def upload_to_s3(file_name, bucket, object_name=None):
             object_name = os.path.basename(file_name)
 
         # Upload the file
-        s3_client = boto3.client('s3')
+
         try:
             response = s3_client.upload_file(file_name, bucket, object_name, ExtraArgs={'ACL': 'public-read'})
         except ClientError as e:
@@ -60,8 +67,6 @@ def upload_to_s3(file_name, bucket, object_name=None):
 
     else:
         r = requests.get(file_name, stream=True)
-
-        s3_client = boto3.client('s3')
 
         print('response headers', r.headers)
 
