@@ -16,6 +16,7 @@ oauth: OAuth1Session = OAuth1Session(
 
 
 class Twitter:
+    @retry(max_attempts=3, delay_seconds=2)
     async def publish_tweet(self, tweet, media=None) -> dict:
         print("tweet: ", tweet)
         print("media: ", media)
