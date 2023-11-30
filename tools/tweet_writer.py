@@ -41,9 +41,6 @@ class SimpleTweetWriter(Tool):
     """
 
     async def run(self, topic: str, detail: str = None, image_url=None) -> ToolCallResult:
-
-        image_url = "https://xavier-personal-agent.s3.ap-east-1.amazonaws.com/xcvieljcnkidbify.png"
-
         Logger.info(f"tool:{self.name} topic: {topic}, detail: {detail}, image_url: {image_url}")
 
         user_profile = {}
