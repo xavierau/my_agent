@@ -157,9 +157,10 @@ async def get_function_response(memory, tool_calls):
         function_to_call = available_functions[function_name]
         function_args = json.loads(tool_call.function.arguments)
 
-        function_call_result = await function_to_call(**function_args)
-
-        print("function_call_result", function_call_result)
+        try:
+            function_call_result = await function_to_call(**function_args)
+        except:
+            function_call_result = ToolCallResult(result="An error occurred while processing the response")
 
         function_call_reply_message = Message(
             tool_call_id=tool_call.id,
