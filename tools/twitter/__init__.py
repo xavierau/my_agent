@@ -1,7 +1,7 @@
 import os
 import time
 from datetime import datetime
-
+from utils.logger import Logger
 import requests
 from requests_oauthlib import OAuth1Session
 
@@ -35,6 +35,10 @@ class Twitter:
         )
 
         if response.status_code != 201:
+            # log the error
+            Logger.info(message="Request returned an error: {} {}".format(response.status_code, response.text),
+                        data=response.json(),
+                        file_path="./debug.log")
             raise Exception(
                 "Request returned an error: {} {}".format(response.status_code, response.text)
             )
