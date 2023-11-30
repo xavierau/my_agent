@@ -18,7 +18,7 @@ class SimpleTweetWriter(Tool):
     name: str = "tweet_writer"
     description: str = "This tool is use when you need to post a tweet to twitter"
     file_path: str = "./tweet.txt"
-    twitter = Twitter()
+    twitter: Twitter = Twitter()
 
     class Config:
         arbitrary_types_allowed = True
