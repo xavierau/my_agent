@@ -38,6 +38,7 @@ class SimpleTweetWriter(Tool):
     Promote Interaction: Encourage retweets, shares, and tags. This can be through contests, questions, or direct calls to action.
     
     Always create hashtags for your tweets and put them at the end of the tweet.
+    Finally, remember twitter does not support markdown, only plain text.
     """
 
     async def run(self, topic: str, detail: str = None, image_url=None) -> ToolCallResult:

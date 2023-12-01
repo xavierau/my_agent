@@ -1,14 +1,10 @@
 # import os
 import json
 import os
-from dataclasses import Field
 from typing import List
 
-import requests
 import tiktoken
-from bs4 import BeautifulSoup
 from langchain.text_splitter import CharacterTextSplitter
-from openai import OpenAI
 import dotenv
 
 from utils.llm import get_response_content_from_gpt
@@ -73,7 +69,8 @@ class GoogleSearchTool(Tool):
         # print("custom search response: ", response_dict)
 
         service = build(
-            "customsearch", "v1", developerKey=os.getenv("GOOGLE_CUSTOM_SEARCH_API_KEY")
+            "customsearch", "v1",
+            developerKey=os.getenv("GOOGLE_CUSTOM_SEARCH_API_KEY")
         )
 
         res = (
@@ -90,12 +87,12 @@ class GoogleSearchTool(Tool):
         if len(items) > limit:
             items = items[:limit]
 
-        tasks = []
+        tasks = set()
 
         for item in items:
-            tasks.append(self._to_structure(query, item))
+            tasks.add(self._to_structure(query, item))
 
-        summarized_websites = await asyncio.gather(*tuple(tasks))
+        summarized_websites = await asyncio.gather(*tasks)
 
         print("summarized_websites", summarized_websites)
 
@@ -213,9 +210,9 @@ class GoogleSearchTool(Tool):
         texts = text_splitter.split_text(text)
         tasks = tuple([self._simple_summarize(query=query, text=t) for t in texts])
 
-        summaries: List[str] = await asyncio.gather(*tasks)
+        summaries = await asyncio.gather(*tasks)
 
-        return await self._group_summarized_chunk(query=query, chunks=summaries)
+        return await self._group_summarized_chunk(query=query, chunks=list(summaries))
 
     async def fetch_page_content(self, url):
         print("try url: ", url)

@@ -294,3 +294,79 @@ Remember, practice is key to honing any skill. By routinely applying these model
 - **Benchmarking:** Compare your situation with industry standards.
 - **Expert Consultation:** Seek out advice from professionals or experts.
 `````
+**Software Design Patterns Coding Quiz Questions**
+
+### Creational Patterns: Singleton
+1. Write a Singleton class in Java. How would you prevent cloning of this singleton instance?
+2. How can you implement a thread-safe Singleton pattern in C# without using locks?
+3. In Python, how can you use a metaclass to create a Singleton?
+4. Describe a real-world scenario where a Singleton pattern can lead to problems.
+5. Implement a Singleton pattern in JavaScript (ES6) that lazily initializes.
+
+### Structural Patterns: Adapter and Decorator
+**Adapter Pattern**
+1. Explain how to implement an adapter to make two incompatible interfaces work together with a code example.
+2. How can the Adapter pattern be useful when dealing with third-party libraries or APIs?
+3. What are the differences between object adapter and class adapter patterns? Provide code snippets for each.
+4. Write a simple Python script that adapts a legacy queue class to function as a modern, iterable collection.
+5. Illustrate with C++ code how to use an Adapter pattern to integrate a system expecting Cartesian coordinates with a library that supplies polar coordinates.
+
+**Decorator Pattern**
+1. Create a Java class that dynamically adds logging functionality to an existing object without altering its structure.
+2. In Python, use a Decorator pattern to add timing functionality to multiple functions. How would decorators stack up?
+3. Implement a texting interface with basic functionality and then add enhancements like message encryption and read receipts using the Decorator pattern in C#.
+4. Write a JavaScript function that uses the Decorator pattern to add new behavior to an object instance without affecting other instances.
+5. Describe how you would use the Decorator pattern to implement a scrollable window in a GUI framework.
+
+### Behavioral Patterns: Command, Strategy, and Observer
+**Command Pattern**
+1. Implement a Command pattern in Ruby for a simple home automation system controlling lights and a garage door.
+2. Use the Command pattern to create an undo/redo functionality in a text editor with Java.
+3. Illustrate how to implement a queue of tasks to be executed using the Command pattern in Python.
+4. How can you extend the Command pattern for logging and recovering from failures?
+5. Design a menu system using the Command pattern that can dynamically add and remove items.
+
+**Strategy Pattern**
+1. Using the Strategy pattern, write a class structure for a game application that can switch between different path-finding algorithms during runtime in JavaScript.
+2. Implement a sorting service in C# that can utilize different sorting strategies based on the size of the dataset.
+3. Create a PHP web application that can switch between different payment processing strategies without changing the client code.
+4. How would you apply the Strategy pattern to manage different image compression algorithms in a digital media application?
+5. Write a Python script where the Strategy pattern is used for a machine learning model selection based on dataset characteristics.
+
+**Observer Pattern**
+1. Explain the Observer pattern and implement it in Node.js for a weather data monitoring system.
+2. How can you use the Observer pattern to implement an event listener system in JavaScript?
+3. Implement the Observer pattern in Java for a stock market monitoring system which notifies multiple display elements when a stock price changes.
+4. Demonstrate Observer pattern usage in a user interface library where a UI element needs to be updated based on state changes in the system.
+5. Detail a use case for the Observer pattern in a social media feed where new posts get pushed to a subscriber's feed.
+`````
+**Interview Questions for Junior Developer about Design Patterns**
+
+**Question 1**: _You're tasked with creating an object for HTTP requests across the application. Which design pattern do you use?_
+**Suggested Answer**: _Singleton pattern to ensure only one instance manages requests throughout the app._
+**Reason**: _Singleton provides a global access point and prevents multiple instances._
+
+**Question 2**: _How would you design a payment system to adapt to new methods in the future?_
+**Suggested Answer**: _Use the Strategy pattern for flexible addition of new payment methods._
+**Reason**: _Strategy allows interchangeability of algorithms without altering client code._
+
+**Question 3**: _How do you notify different system parts of a price drop in an e-commerce platform?_
+**Suggested Answer**: _Use the Observer pattern to notify and update multiple observers of changes._
+**Reason**: _Supports a publish-subscribe relationship for decoupled communication._
+
+**Question 4**: _How to add features like discounting to objects without altering them?_
+**Suggested Answer**: _Decorator pattern to dynamically 'wrap' objects with new behaviors._
+**Reason**: _Enhances objects at runtime while adhering to the Open/Closed Principle._
+
+**Question 5**: _How to manage classes with similar structures but different behaviors for future extension?_
+**Suggested Answer**: _Template Method pattern for a common algorithm structure with customizable steps._
+**Reason**: _Organizes code by reducing duplication and encouraging reuse through inheritable steps._
+`````
+Architecture diagram for modern web application has been created.
+`````
+Creating HTML code based on the provided image and description.
+`````
+Implementing the top alert bar and second-level menu structure based on the description and image provided.
+`````
+Implementing the alert and second-level menu highlighted in the image using Bootstrap 5.
+`````
