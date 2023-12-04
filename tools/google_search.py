@@ -1,11 +1,13 @@
 # import os
 import json
 import os
-from typing import List
+from typing import List, Optional
 
 import tiktoken
 from langchain.text_splitter import CharacterTextSplitter
 import dotenv
+from openai import AsyncOpenAI
+from pydantic import BaseModel, Field
 
 from utils.llm import get_response_content_from_gpt
 from utils.logger import Logger
@@ -17,6 +19,86 @@ from bs4 import BeautifulSoup
 dotenv.load_dotenv()
 
 from tools.common import Tool, ToolCallResult
+
+
+class SummarizeTool(BaseModel):
+    text: str
+    requirement: Optional[str] = None
+    model_name: str = Field(default="gpt-3.5-turbo-1106")
+
+    async def get_summary(self, prompt: str = None) -> str:
+        client = AsyncOpenAI()
+
+        messages = [
+            {
+                "role": "user",
+                "content": self.default_prompt if prompt is None else prompt
+            }
+        ]
+
+        response = await client.chat.completions.create(
+            model=self.model_name,
+            messages=messages,
+        )
+
+        return response.choices[0].message.content
+
+    @property
+    def default_prompt(self):
+        prompt = f"""Please summarize the text for the purpose below:
+
+                    Text:
+                    {self.text}
+                    `````
+
+                    %purpose%
+
+                    Summary:"""
+
+        if self.requirement is not None:
+            return prompt.replace('%purpose%', f"""Purpose:
+                        {self.requirement}
+                        `````
+                        """)
+
+        return prompt.replace('%purpose%', '')
+
+
+class MapReduceSummarizeTool(SummarizeTool):
+    text: str
+    requirement: Optional[str] = None
+    model_name: str = Field(default="gpt-3.5-turbo-1106")
+    chunk_size: int = Field(default=2048)
+    overlap: int = Field(default=100)
+
+    async def get_summary(self) -> str:
+        text_splitter = CharacterTextSplitter.from_tiktoken_encoder(
+            chunk_size=self.chunk_size, chunk_overlap=self.overlap
+        )
+        texts = text_splitter.split_text(self.text)
+
+        summaries = await asyncio.gather(
+            *[SummarizeTool(text=text, requirement=self.requirement).get_summary() for text in texts])
+
+        summaries = '\n'.join(summaries)
+
+        suggestion = f"""Base on the following summaries, answer user's question.
+                                               Summaries:
+                                               {summaries}
+                                               `````
+                                               %requirement%
+
+                                               Answer:"""
+
+        if self.requirement:
+            suggestion = suggestion.replace('%requirement%', f"""User Question:
+                                               {self.requirement}
+                                               `````
+                    """)
+        else:
+            suggestion = suggestion.replace('%requirement%', '')
+
+        return await SummarizeTool(text="").get_summary(suggestion)
 
 
 class GoogleSearchTool(Tool):
@@ -62,17 +144,21 @@ class GoogleSearchTool(Tool):
         if query is None:
             raise Exception
 
-        # url = f"https://customsearch.googleapis.com/customsearch/v1?cx={self.search_engine_id}&q={query}&key={self.key}&num={limit}"
-        #
-        # response_dict = requests.get(url).json()
-        #
-        # print("custom search response: ", response_dict)
+        items = await self._get_result_from_google_search(limit, query)
 
+        summarized_websites = await asyncio.gather(*[self._summarize_website(query, item['link']) for item in items])
+
+        results = []
+        for idx, item in enumerate(items):
+            results.append(self._to_structure(query, item, summarized_websites[idx]))
+
+        return ToolCallResult(result=json.dumps(results))
+
+    async def _get_result_from_google_search(self, limit, query):
         service = build(
             "customsearch", "v1",
             developerKey=os.getenv("GOOGLE_CUSTOM_SEARCH_API_KEY")
         )
-
         res = (
             service.cse()
             .list(
@@ -81,145 +167,39 @@ class GoogleSearchTool(Tool):
             )
             .execute()
         )
-
         items = res.get('items', [])
-
         if len(items) > limit:
             items = items[:limit]
+        return items
 
-        tasks = set()
-
-        for item in items:
-            tasks.add(self._to_structure(query, item))
-
-        summarized_websites = await asyncio.gather(*tasks)
-
-        print("summarized_websites", summarized_websites)
-
-        return ToolCallResult(result=json.dumps(summarized_websites))
-
-    async def _to_structure(self, question: str, data: dict):
+    def _to_structure(self, question: str, data: dict, summary):
         return {
-            "title": data.get("title"),
-            "link": data.get("link"),
-            "summary": await self._summarize_site(question, data.get("link"))
+            "site_title": data.get("title"),
+            "source": data.get("link"),
+            "summary": summary
         }
 
-    async def _summarize_site(self, question: str, url: str) -> str | None:
+    async def _summarize_site(self, question: str, content: str) -> str | None:
 
         try:
-            # # Send a GET request to the URL
-            # response = requests.get(url)
-            #
-            # # Check if the request was successful
-            # if response.status_code == 200:
-            #     # Parse the content of the request with BeautifulSoup
-            #     soup = BeautifulSoup(response.content, 'html.parser')
-            #
-            #     # Extract data
-            #     # For example, this will print all the text in the body of the HTML
-            #     content = soup.get_text()
-            #
-            #     context = content
-            #
-            #     encoder = tiktoken.encoding_for_model("gpt-3.5-turbo")
-            #     number_of_tokens = len(encoder.encode(context))
-            #
-            #     if number_of_tokens < 2048:
-            #         return self._simple_summarize(query=question, text=context)
-            #     else:
-            #         return self._reduce_summarize(query=question, text=context)
-            #
-            # else:
-            #     print("Failed to retrieve the webpage")
-            #     return None
-
-            # To run the async function
-
-            context = await self.fetch_page_content(url)
-
-            if context is None:
-                return "No content found."
-
             encoder = tiktoken.encoding_for_model("gpt-3.5-turbo")
-            number_of_tokens = len(encoder.encode(context))
-
-            print("token count: ", number_of_tokens, url)
-
+            number_of_tokens = len(encoder.encode(content))
+            print("token count: ", number_of_tokens)
             if number_of_tokens < 2048:
-                return await self._simple_summarize(query=question, text=context)
+                return await SummarizeTool(text=content, requirement=question).get_summary()
             else:
-                return await self._reduce_summarize(query=question, text=context)
+                return await MapReduceSummarizeTool(text=content, requirement=question).get_summary()
 
         except Exception as e:
             print("Something wrong about fetching the url")
             print(e)
             return None
 
-    async def _simple_summarize(self, query: str, text: str) -> str:
-        suggestion = f"""Base on the following context, answer user's question.
-                        Context:
-                        {text}
-                        `````
-                        User Question:
-                        {query}
-                        `````
-    
-                        Answer:"""
-
-        messages = [{"role": "user", "content": suggestion}]
-
-        return await get_response_content_from_gpt(messages, self.summary_model)
-
-    async def _summarize_chunk(self, query: str, chunk):
-        suggestion = f"""Base on the following context, answer user's question.
-                               Context:
-                               {chunk}
-                               `````
-                               User Question:
-                               {query}
-                               `````
-    
-                               Answer:"""
-
-        messages = [{"role": "user", "content": suggestion}]
-
-        return await get_response_content_from_gpt(messages, self.summary_model)
-
-    async def _group_summarized_chunk(self, query: str, chunks: List[str]):
-        summaries = '\n'.join(chunks)
-
-        suggestion = f"""Base on the following summaries, answer user's question.
-                                       Summaries:
-                                       {summaries}
-                                       `````
-                                       User Question:
-                                       {query}
-                                       `````
-    
-                                       Answer:"""
-
-        messages = [{"role": "user", "content": suggestion}]
-
-        return await get_response_content_from_gpt(messages, self.summary_model)
-
-    async def _reduce_summarize(self, query: str, text: str):
-        text_splitter = CharacterTextSplitter.from_tiktoken_encoder(
-            chunk_size=2048, chunk_overlap=100
-        )
-        texts = text_splitter.split_text(text)
-        tasks = tuple([self._simple_summarize(query=query, text=t) for t in texts])
-
-        summaries = await asyncio.gather(*tasks)
-
-        return await self._group_summarized_chunk(query=query, chunks=list(summaries))
-
-    async def fetch_page_content(self, url):
+    async def _fetch_page_content(self, url):
         print("try url: ", url)
         try:
             # Launch the browser
             browser = await launch()
-            print("browser launched")
             page = await browser.newPage()
 
             # Navigate to the URL
@@ -244,12 +224,15 @@ class GoogleSearchTool(Tool):
 
             print("parsed content", url)
 
-            # Here you can continue with your logic for summarizing text
-            # ...
-
             await browser.close()
             return page_text
 
         except Exception as e:
             print(f"Something went wrong: {e}", url)
             return None
+
+    async def _summarize_website(self, query: str, url: str):
+
+        page_content = await self._fetch_page_content(url)
+
+        return await self._summarize_site(query, page_content)

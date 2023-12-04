@@ -5,7 +5,8 @@ FROM python:3.10-slim
 WORKDIR /app
 
 # Install Python packages
-RUN pip install --no-cache-dir matplotlib pandas numpy yfinance mplfinance scikit-learn pyppeteer bs4
+RUN pip3 install matplotlib pandas numpy yfinance mplfinance scikit-learn pyppeteer bs4 diagrams
+RUN pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
 
 CMD ["python3"]
 
